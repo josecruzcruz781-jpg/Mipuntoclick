@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MiPunto Click - Panamá</title>
+    <style>
+        :root {
+            --primary: #0a0e17; --secondary: #1a1f2e; --accent: #00d4ff;
+            --text: #e0e0ff; --card-bg: rgba(26, 31, 46, 0.7);
+            --yappy: #0057ba; --success: #25D366;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background: var(--primary); color: var(--text); padding-bottom: 80px; }
+        .container { max-width: 500px; margin: 0 auto; padding: 15px; }
+        .header { padding: 20px; background: var(--secondary); border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 100; text-align: center; }
+        .business-info { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(0,212,255,0.3); }
+        .input-group { margin-bottom: 15px; }
+        .input-label { display: block; font-size: 0.7rem; color: var(--accent); font-weight: bold; margin-bottom: 5px; }
+        .input-field { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; }
+        .product-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .qty-controls { display: flex; align-items: center; gap: 10px; background: #000; padding: 5px 10px; border-radius: 20px; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-whatsapp { background: var(--success); color: black; }
+        .btn-yappy { background: var(--yappy); color: white; }
+        .btn-share { background: var(--accent); color: black; margin-top: 20px; }
+        .payment-selector { display: flex; gap: 10px; margin: 15px 0; }
+        .pay-opt { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--accent); text-align: center; cursor: pointer; opacity: 0.5; }
+        .pay-opt.active { opacity: 1; background: var(--accent); color: black; }
+        .bottom-bar { position: fixed; bottom: 0; width: 100%; background: var(--secondary); display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #333; }
+        .tab-btn { background: none; border: none; color: #888; font-size: 0.7rem; }
+        .tab-btn.active { color: var(--accent); font-weight: bold; }
+        #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: white; color: black; padding: 10px 20px; border-radius: 20px; display: none; z-index: 1000; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <h1 id="mainTitle">MiPunto Click</h1>
+</header>
+
+<div class="container">
+    <section id="clientView">
+        <div class="business-info">
+            <h2 id="displayBizName">Cargando...</h2>
+            <p id="displayBizDesc">Panamá - Realiza tu pedido</p>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">👤 TU NOMBRE</label>
+            <input type="text" id="cName" class="input-field" placeholder="¿A quién entregamos?">
+        </div>
+        <div class="input-group">
+            <label class="input-label">📍 DIRECCIÓN / WHATSAPP</label>
+            <input type="text" id="cAddr" class="input-field" placeholder="Dirección y Celular">
+        </div>
+
+        <h3 style="color: var(--accent); margin: 20px 0 10px; font-size: 0.8rem;">CATÁLOGO</h3>
+        <div id="catalog"></div>
+
+        <div class="payment-selector">
+            <div class="pay-opt active" onclick="setPay('EFECTIVO')">💵 EFECTIVO</div>
+            <div class="pay-opt" onclick="setPay('YAPPY')">📱 YAPPY</div>
+        </div>
+
+        <div class="business-info" style="border-style: dashed; text-align: right;">
+            <p style="font-size: 0.8rem;">Envío: <span id="dCost">$0.00</span></p>
+            <h2 style="color: var(--accent);">Total: <span id="total">$0.00</span></h2>
+        </div>
+
+        <button id="yappyBtn" class="btn btn-yappy" style="display:none;" onclick="copyYappy()">COPIAR NÚMERO YAPPY</button>
+        <button class="btn btn-whatsapp" onclick="enviarPedido()">CONFIRMAR PEDIDO</button>
+    </section>
+
+    <section id="ownerView" style="display: none;">
+        <h3 style="color: var(--accent); margin-bottom: 15px;">CONFIGURAR MI NEGOCIO</h3>
+        <input type="text" id="ownName" class="input-field" placeholder="Nombre del Negocio" style="margin-bottom: 10px;">
+        <input type="tel" id="ownWhatsApp" class="input-field" placeholder="WhatsApp (Ej: 60001234)" style="margin-bottom: 10px;">
+        <input type="tel" id="ownYappy" class="input-field" placeholder="Número Yappy" style="margin-bottom: 10px;">
+        <input type="number" id="ownDelivery" class="input-field" placeholder="Costo de Envío ($)" style="margin-bottom: 10px;">
+        
+        <div id="ownProducts"></div>
+        <button class="btn" onclick="addProd()" style="background: #333; color: var(--accent);">➕ AÑADIR PRODUCTO</button>
+        <button class="btn btn-whatsapp" onclick="save()">GUARDAR LOCALMENTE</button>
+        
+        <button class="btn btn-share" onclick="generateShareLink()">📤 GENERAR LINK PARA CLIENTES</button>
+        <p style="font-size: 0.6rem; text-align: center; margin-top: 10px; opacity: 0.6;">Usa este botón para enviarle tu catálogo listo a los clientes.</p>
+    </section>
+</div>
+
+<nav class="bottom-bar" id="navBar">
+    <button class="tab-btn active" onclick="show('client')">🛒 TIENDA</button>
+    <button class="tab-btn" onclick="show('owner')">⚙️ MI NEGOCIO</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+    let payMethod = 'EFECTIVO';
+    let biz = { name: "Mi Negocio", wa: "", yap: "", delivery: 0, prods: [] };
+
+    // CARGAR DATOS AL INICIAR
+    function init() {
+        const params = new URLSearchParams(window.location.search);
+        const data = params.get('d');
+        
+        if (data) {
+            // SI VIENE DE UN LINK COMPARTIDO
+            biz = JSON.parse(atob(data));
+            document.getElementById('navBar').style.display = 'none'; // Ocultar config al cliente
+            notify("Catálogo cargado correctamente");
+        } else {
+            // SI ES EL DUEÑO EN SU NAVEGADOR
+            const saved = localStorage.getItem('mpClick_Pro');
+            if (saved) biz = JSON.parse(saved);
+        }
+        render();
+    }
+
+    function save() {
+        biz.name = document.getElementById('ownName').value;
+        let wa = document.getElementById('ownWhatsApp').value.replace(/\D/g, '');
+        biz.wa = wa.startsWith('507') ? wa : '507' + wa;
+        biz.yap = document.getElementById('ownYappy').value;
+        biz.delivery = parseFloat(document.getElementById('ownDelivery').value) || 0;
+        localStorage.setItem('mpClick_Pro', JSON.stringify(biz));
+        render();
+        notify("✅ Guardado");
+    }
+
+    function generateShareLink() {
+        save();
+        const base64Data = btoa(JSON.stringify(biz));
+        const url = window.location.origin + window.location.pathname + '?d=' + base64Data;
+        navigator.clipboard.writeText(url);
+        alert("¡Link generado y copiado! Envíalo a tus clientes por WhatsApp.");
+    }
+
+    function render() {
+        document.getElementById('displayBizName').innerText = biz.name;
+        document.getElementById('ownName').value = biz.name;
+        document.getElementById('ownWhatsApp').value = biz.wa.replace('507', '');
+        document.getElementById('ownYappy').value = biz.yap;
+        document.getElementById('ownDelivery').value = biz.delivery;
+        document.getElementById('dCost').innerText = `$${biz.delivery.toFixed(2)}`;
+
+        // Render Catálogo Cliente
+        const cat = document.getElementById('catalog');
+        cat.innerHTML = '';
+        biz.prods.forEach(p => {
+            const d = document.createElement('div');
+            d.className = 'product-card';
+            d.innerHTML = `<div><b>${p.n}</b><br>$${p.p.toFixed(2)}</div>
+                <div class="qty-controls">
+                    <button onclick="chg(${p.id}, -1)">-</button>
+                    <span>${p.q || 0}</span>
+                    <button onclick="chg(${p.id}, 1)">+</button>
+                </div>`;
+            cat.appendChild(d);
+        });
+
+        // Render Edición Dueño
+        const list = document.getElementById('ownProducts');
+        list.innerHTML = '';
+        biz.prods.forEach(p => {
+            const d = document.createElement('div');
+            d.className = 'product-card';
+            d.innerHTML = `<span>${p.n} ($${p.p})</span><button onclick="del(${p.id})">🗑️</button>`;
+            list.appendChild(d);
+        });
+        calc();
+    }
+
+    function addProd() {
+        const n = prompt("Producto:"); const p = prompt("Precio:");
+        if(n && p) { biz.prods.push({ id: Date.now(), n, p: parseFloat(p), q: 0 }); render(); }
+    }
+
+    function del(id) { biz.prods = biz.prods.filter(p => p.id !== id); render(); }
+    function chg(id, v) { const p = biz.prods.find(x => x.id === id); p.q = Math.max(0, (p.q || 0) + v); render(); }
+    
+    function calc() {
+        const sub = biz.prods.reduce((a, b) => a + (b.p * (b.q || 0)), 0);
+        document.getElementById('total').innerText = `$${(sub + biz.delivery).toFixed(2)}`;
+    }
+
+    function setPay(m) {
+        payMethod = m;
+        document.querySelectorAll('.pay-opt').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+        document.getElementById('yappyBtn').style.display = (m === 'YAPPY') ? 'flex' : 'none';
+    }
+
+    function copyYappy() { navigator.clipboard.writeText(biz.yap); notify("Número Yappy copiado"); }
+
+    function enviarPedido() {
+        const n = document.getElementById('cName').value;
+        const a = document.getElementById('cAddr').value;
+        const s = biz.prods.filter(p => p.q > 0);
+        if(!n || !a || !s.length) return alert("Completa los datos");
+
+        let t = `*PEDIDO - ${biz.name.toUpperCase()}*\n\n*Cliente:* ${n}\n*Info:* ${a}\n*Pago:* ${payMethod}\n\n*PRODUCTOS:*\n`;
+        s.forEach(p => t += `- ${p.n} x${p.q} ($${(p.q*p.p).toFixed(2)})\n`);
+        t += `\n*TOTAL: ${document.getElementById('total').innerText}*`;
+        window.open(`https://wa.me/${biz.wa}?text=${encodeURIComponent(t)}`);
+    }
+
+    function show(v) {
+        document.getElementById('clientView').style.display = v === 'client' ? 'block' : 'none';
+        document.getElementById('ownerView').style.display = v === 'owner' ? 'block' : 'none';
+        document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', (v==='client'&&i===0) || (v==='owner'&&i===1)));
+    }
+
+    function notify(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+
+    init();
+</script>
+</body>
+</html>
