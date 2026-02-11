@@ -12,7 +12,7 @@
 * **🚀 Zero Hosting:** No requiere servidor ni base de datos; los datos se guardan localmente o se transmiten por la URL.
 
 ## 🚀 Cómo empezar
-1. Entra a la web: [TU_ENLACE_DE_GITHUB_PAGES]
+1. Entra a la web: [https://josecruzcruz781-jpg.github.io/Mipuntoclick/]
 2. Ve a la pestaña **"Mi Negocio"**.
 3. Configura tu nombre, WhatsApp, número Yappy y añade tus productos.
 4. Haz clic en **"Generar Link para Clientes"**.
